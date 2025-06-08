@@ -53,7 +53,6 @@ def get_image_piece(img_id, y_offset, img_size, username):
         log("Failed to get image data from", img_id, "by", username)
         return "Error getting image data"
 
-    # Resize the image (even though it's already 300x300)
     img = img.resize((int(img_size), int(img_size)))
     width, height = img.size
     pixels = img.load()
@@ -69,11 +68,14 @@ def get_image_piece(img_id, y_offset, img_size, username):
     for y in range(y_offset, y_offset + amount):
         for x in range(width):
             r, g, b, a = pixels[x, y]
-            # Encode only RGB to keep value under 2^24
-            color = r * 65536 + g * 256 + b
+            # Invert colors
+            r_inv = 255 - r
+            g_inv = 255 - g
+            b_inv = 255 - b
+            color = r_inv * 65536 + g_inv * 256 + b_inv
             colors.append(color)
 
-    log(username, 'requested image piece for image "' + img_id + '" with y offset', y_offset)
+    log(username, 'requested inverted image piece for image "' + img_id + '" with y offset', y_offset)
     return colors
 
 @client1.request
