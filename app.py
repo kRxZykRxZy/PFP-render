@@ -20,7 +20,7 @@ cloud1 = session.connect_cloud(1186198180)  # replace with your project id
 client1 = cloud1.requests()
 
 @client1.request
-def ping():  # called when client receives request
+def ping(username):  # called when client receives request
     log("Ping request received")
     return "pong"
 
