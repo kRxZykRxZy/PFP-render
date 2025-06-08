@@ -1,4 +1,4 @@
-does this work with the 300x300 import scratchattach as sa
+import scratchattach as sa
 import requests
 import urllib.request
 from PIL import Image
