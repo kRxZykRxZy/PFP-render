@@ -27,7 +27,7 @@ def ping(username):  # called when client receives request
 @client1.request
 def get_pfp(username):
     try:
-        user_id = sa.get_user(username).id()
+        user_id = sa.get_user(username).id
     except:
         return "User Not Found"
     img_url = f"https://uploads.scratch.mit.edu/get_image/user/{user_id}_200x200.png"
