@@ -1,3 +1,4 @@
 flask
 scratchattach
+requests
 pillow
