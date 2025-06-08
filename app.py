@@ -31,7 +31,7 @@ def get_pfp(username):
         user_id = data["id"]
     except:
         return "User Not Found"
-    img_url = f"https://uploads.scratch.mit.edu/get_image/user/{user_id}_100x100.png"
+    img_url = f"https://uploads.scratch.mit.edu/get_image/user/{user_id}_300x300.png"
     log(f"Image url: {img_url}")
     image_name = f"pfp{convertToNumber(username)}.png"
     urllib.request.urlretrieve(img_url, f"/tmp/{image_name}")
