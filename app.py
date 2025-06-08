@@ -1,4 +1,4 @@
-import scratchattach as sa
+does this work with the 300x300 import scratchattach as sa
 import requests
 import urllib.request
 from PIL import Image
@@ -14,14 +14,13 @@ def convertToNumber(s):
 def convertFromNumber(n):
     return n.to_bytes(math.ceil(n.bit_length() / 8), 'little').decode()
 
-# Load session from environment
 session_ps = os.environ.get("SCRATCH_PS")
-session = sa.login('Dev-Server', session_ps)  # Replace 'Dev-Server' with your username
-cloud1 = session.connect_cloud(1186198180)    # Replace with your project ID
+session = sa.login('Dev-Server', session_ps)  # replace with your session_id and username
+cloud1 = session.connect_cloud(1186198180)  # replace with your project id
 client1 = cloud1.requests()
 
 @client1.request
-def ping(username):
+def ping(username):  # called when client receives request
     log("Ping request received")
     return "pong"
 
@@ -32,17 +31,12 @@ def get_pfp(username):
         user_id = data["id"]
     except:
         return "User Not Found"
-
     img_url = f"https://uploads.scratch.mit.edu/get_image/user/{user_id}_300x300.png"
     log(f"Image url: {img_url}")
     image_name = f"pfp{convertToNumber(username)}.png"
-
-    try:
-        urllib.request.urlretrieve(img_url, f"/tmp/{image_name}")
-        log(f"Image stored in /tmp/{image_name}")
-        return image_name
-    except:
-        return "Error downloading image"
+    urllib.request.urlretrieve(img_url, f"/tmp/{image_name}")
+    log(f"Image stored in /tmp/{image_name}")
+    return image_name
 
 @client1.request
 def get_image_piece(img_id, y_offset, img_size, username):
@@ -52,30 +46,18 @@ def get_image_piece(img_id, y_offset, img_size, username):
     except:
         log("Failed to get image data from", img_id, "by", username)
         return "Error getting image data"
-
     img = img.resize((int(img_size), int(img_size)))
     width, height = img.size
     pixels = img.load()
 
     amount = 10
-    y_offset = int(y_offset)
-    img_size = int(img_size)
-
-    if y_offset + amount > height:
-        return "Offset out of bounds"
-
     colors = []
-    for y in range(y_offset, y_offset + amount):
+    for y in range(int(y_offset), int(y_offset) + int(amount)):
         for x in range(width):
             r, g, b, a = pixels[x, y]
-            # Invert colors
-            r_inv = 255 - r
-            g_inv = 255 - g
-            b_inv = 255 - b
-            color = r_inv * 65536 + g_inv * 256 + b_inv
+            color = a * 16777216 + r * 65536 + g * 256 + b
             colors.append(color)
-
-    log(username, 'requested inverted image piece for image "' + img_id + '" with y offset', y_offset)
+    log(username, 'requested image piece for image "' + img_id + '" with y offset', y_offset)
     return colors
 
 @client1.request
