@@ -183,7 +183,7 @@ cloud3 = session.connect_cloud(1186838073)
 client3 = cloud3.requests()
 
 @client3.request
-def count(user):
+def count(user, something):
     return sa.get_user().follower_count()
 
 @client3.request
