@@ -189,33 +189,33 @@ def count(user, something):
 
 @client3.request
 def pfp(user):
-    try:
-        data = requests.get(f"https://api.scratch.mit.edu/users/{user}").json()
-        user_id = data["id"]
-    except:
-        return "User Not Found"
+    try:
+        data = requests.get(f"https://api.scratch.mit.edu/users/{user}").json()
+        user_id = data["id"]
+    except:
+        return "User Not Found"
 
-    img_url = f"https://uploads.scratch.mit.edu/get_image/user/{user_id}_1000x1000.png"
-    image_path = f"/tmp/pfp_{user}.png"
+    img_url = f"https://uploads.scratch.mit.edu/get_image/user/{user_id}_1000x1000.png"
+    image_path = f"/tmp/pfp_{user}.png"
 
-    try:
-        urllib.request.urlretrieve(img_url, image_path)
-        img = Image.open(image_path).convert("RGBA")
-        img = img.resize((100, 100))
-    except Exception as e:
-        log("Error downloading or processing image:", e)
-        return "Error"
+    try:
+        urllib.request.urlretrieve(img_url, image_path)
+        img = Image.open(image_path).convert("RGBA")
+        img = img.resize((100, 100))
+    except Exception as e:
+        log("Error downloading or processing image:", e)
+        return "Error"
 
-    pixels = img.load()
-    colors = []
-    for y in range(100):
-        for x in range(100):
-            r, g, b, a = pixels[x, y]
-            color = a * 16777216 + r * 65536 + g * 256 + b
-            colors.append(color)
+    pixels = img.load()
+    colors = []
+    for y in range(100):
+        for x in range(100):
+            r, g, b, a = pixels[x, y]
+            color = a * 16777216 + r * 65536 + g * 256 + b
+            colors.append(color)
 
-    log(f"Returning {len(colors)} colors for", user)
-    return colors
+    log(f"Returning {len(colors)} colors for", user)
+    return colors
 
 @client3.request
 def ping():
