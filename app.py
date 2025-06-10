@@ -184,6 +184,7 @@ client3 = cloud3.requests()
 
 @client3.request
 def count(user, something):
+    print(something) 
     return sa.get_user().follower_count()
 
 @client3.request
