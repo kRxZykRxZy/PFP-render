@@ -179,9 +179,21 @@ def done(img_id):
 def on_ready():
     log("Request handler is running for client2")
 
+cloud3 = session.connect_cloud(1186838073) 
+client3 = cloud3.requests()
+
+@client3.request
+def count(user):
+    return sa.get_user().follower_count()
+
+@client3.request
+def ping():
+    return "pong" 
+    
 # === Start Everything ===
 
 keep_alive()
 client1.start()
 client2.start()
-log("Started both clients")
+client3.start()
+log("Started all clients")
