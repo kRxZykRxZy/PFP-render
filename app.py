@@ -140,7 +140,7 @@ def gif(username, quality):
 @client1.request
 def count(user, something):
     print(something) 
-    user = session.connect_user(user)
+    user = sa.get_user(user)
     return user.follower_count()
     
 @client1.request
@@ -170,6 +170,12 @@ def get_pfp(username):
     return handle_get_pfp(username)
 
 @client2.request
+def count(user, something):
+    print(something) 
+    user = sa.get_user(user)
+    return user.follower_count()
+    
+@client2.request
 def gif(username, quality):
     return handle_gif(username, quality)
 
@@ -191,7 +197,8 @@ client3 = cloud3.requests()
 @client3.request
 def count(user, something):
     print(something) 
-    return sa.get_user(user).follower_count()
+    user = sa.get_user(user)
+    return user.follower_count()
 
 @client3.request
 def pfp(user):
