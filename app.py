@@ -14,6 +14,22 @@ def convertToNumber(s):
 def convertFromNumber(n):
     return n.to_bytes(math.ceil(n.bit_length() / 8), 'little').decode()
 
+def get_follower_count(username):
+    url = f"https://api.scratch.mit.edu/users/{username}/followers"
+    offset = 0
+    limit = 40
+    count = 0
+
+    while True:
+        res = requests.get(f"{url}?offset={offset}&limit={limit}")
+        data = res.json()
+        if not data:
+            break
+        count += len(data)
+        offset += limit
+
+    return count
+    
 session_ps = os.environ.get("SCRATCH_PS")
 session = sa.login('Dev-Server', session_ps)
 cloud1 = session.connect_cloud(1186198180)
@@ -140,8 +156,7 @@ def gif(username, quality):
 @client1.request
 def count(user, something):
     print(something) 
-    user = sa.get_user(user)
-    return user.follower_count()
+    return get_follower_count(user)
     
 @client1.request
 def get_image_piece(img_id, y_offset, img_size, username):
@@ -172,8 +187,7 @@ def get_pfp(username):
 @client2.request
 def count(user, something):
     print(something) 
-    user = sa.get_user(user)
-    return user.follower_count()
+    return get_follower_count(user)
     
 @client2.request
 def gif(username, quality):
@@ -197,8 +211,7 @@ client3 = cloud3.requests()
 @client3.request
 def count(user, something):
     print(something) 
-    user = sa.get_user(user)
-    return user.follower_count()
+    return get_follower_count(user)
 
 @client3.request
 def pfp(user):
