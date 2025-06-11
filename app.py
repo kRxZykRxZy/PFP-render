@@ -155,7 +155,7 @@ def gif(username, quality):
 
 @client1.request
 def count(user):
-    return get_follower_count(user)
+    return session.connect_user(user).follower_count()
     
 @client1.request
 def get_image_piece(img_id, y_offset, img_size, username):
@@ -185,8 +185,7 @@ def get_pfp(username):
 
 @client2.request
 def count(user, something):
-    print(something) 
-    return get_follower_count(user)
+    return session.connect_user(user).follower_count()
     
 @client2.request
 def gif(username, quality):
@@ -209,8 +208,7 @@ client3 = cloud3.requests()
 
 @client3.request
 def count(user, something):
-    print(something) 
-    return get_follower_count(user)
+    return session.connect_user(user).follower_count()
 
 @client3.request
 def pfp(user):
