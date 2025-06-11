@@ -154,8 +154,7 @@ def gif(username, quality):
     return handle_gif(username, quality)
 
 @client1.request
-def count(user, something):
-    print(something) 
+def count(user):
     return get_follower_count(user)
     
 @client1.request
