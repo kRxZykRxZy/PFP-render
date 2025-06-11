@@ -138,6 +138,11 @@ def gif(username, quality):
     return handle_gif(username, quality)
 
 @client1.request
+def count(user, something):
+    print(something) 
+    return session.connect_user(user).follower_count()
+    
+@client1.request
 def get_image_piece(img_id, y_offset, img_size, username):
     return handle_image_piece(img_id, y_offset, img_size, username)
 
