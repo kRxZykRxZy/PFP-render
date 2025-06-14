@@ -184,7 +184,7 @@ def get_pfp(username):
     return handle_get_pfp(username)
 
 @client2.request
-def count(user, something):
+def count(user):
     return sa.get_user(user.replace(" ", "")).follower_count()
     
 @client2.request
