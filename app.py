@@ -243,7 +243,38 @@ def pfp(user):
 @client3.request
 def ping():
     return "pong" 
+
+cloud4 = session.connect_cloud(1191148134)
+client4 = cloud4.requests()
+
+@client4.request
+def ping(username):
+    log("Ping request received")
+    return "pong"
+
+@client4.request
+def get_pfp(username):
+    return handle_get_pfp(username)
+
+@client4.request
+def gif(username, quality):
+    return handle_gif(username, quality)
+
+@client4.request
+def count(user):
+    return sa.get_user(user.replace(" ", "")).message_count()
     
+@client4.request
+def get_image_piece(img_id, y_offset, img_size, username):
+    return handle_image_piece(img_id, y_offset, img_size, username)
+
+@client4.request
+def done(img_id):
+    return handle_done(img_id)
+
+@client4.event
+def on_ready():
+    log("Request handler is running for client1")
 # === Start Everything ===
 
 keep_alive()
