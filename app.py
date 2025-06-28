@@ -314,8 +314,8 @@ def get_available_chat_name(user, base_name="chat"):
 
 
 def askAI(prompt, user, chat_name=None):
-    API_KEY = "AIzaSyBVZwRE3rIdUZqgVeSy5RcmUn-adMhwimI"
-    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+    API_KEY = os.getenv("APIKEY")
+    API_URL = os.getenv("APIURL") + API_KEY
 
     # Determine or create chat
     if not chat_name:
