@@ -275,6 +275,91 @@ def done(img_id):
 @client4.event
 def on_ready():
     log("Request handler is running for client1")
+
+cloud5 = session.connect_cloud(1192979296)
+client5 = cloud.requests()
+
+# Directory to store chat histories per user
+CHAT_DIR = "chat_histories"
+os.makedirs(CHAT_DIR, exist_ok=True)
+
+CHAT_LIMIT = 50
+
+
+def load_chat_history(user, chat_name):
+    filepath = os.path.join(CHAT_DIR, f"{user}_{chat_name}.json")
+    if os.path.exists(filepath):
+        with open(filepath, "r") as file:
+            return json.load(file)
+    return []
+
+
+def save_chat_history(user, chat_name, history):
+    filepath = os.path.join(CHAT_DIR, f"{user}_{chat_name}.json")
+    with open(filepath, "w") as file:
+        json.dump(history, file, indent=2)
+
+
+def get_available_chat_name(user, base_name="chat"):
+    for i in range(1, 100):
+        name = f"{base_name}_{i}"
+        filepath = os.path.join(CHAT_DIR, f"{user}_{name}.json")
+        if not os.path.exists(filepath):
+            return name
+        with open(filepath, "r") as file:
+            history = json.load(file)
+            if len(history) < CHAT_LIMIT:
+                return name
+    return f"{base_name}_overflow"
+
+
+def askAI(prompt, user, chat_name=None):
+    API_KEY = "AIzaSyBVZwRE3rIdUZqgVeSy5RcmUn-adMhwimI"
+    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+
+    # Determine or create chat
+    if not chat_name:
+        chat_name = get_available_chat_name(user)
+
+    chat_history = load_chat_history(user, chat_name)
+
+    # Build full history with new prompt
+    chat_history.append({
+        "role": "user",
+        "parts": [{
+            "text": f"You are an AI for scratch. You can only write 50 words max, cannot say anything inappropriate for children under 12, cannot use markdown, images, or canvas code. Only return plain text. Question: '{prompt}'"
+        }]
+    })
+
+    payload = {"contents": chat_history[-CHAT_LIMIT:]}
+
+    # Make request
+    try:
+        response = requests.post(API_URL, json=payload)
+        response.raise_for_status()
+        data = response.json()
+
+        # Parse reply
+        reply = data.get("candidates", [])[0].get("content", {}).get("parts", [])[0].get("text", "")
+
+        chat_history.append({
+            "role": "model",
+            "parts": [{"text": reply}]
+        })
+        save_chat_history(user, chat_name, chat_history)
+
+        return reply
+    except Exception as e:
+        return "Failed To Get Response!"
+
+@client5.request
+def ping():
+    return "AI: Welcome To ScratchGPT, Ask Any Question You Want!"
+
+@client5.request
+def ask(prompt, user):
+    return f"AI: {askAI(prompt, user)}"
+
 # === Start Everything ===
 
 keep_alive()
@@ -282,4 +367,5 @@ client1.start()
 client2.start()
 client3.start()
 client4.start()
+client5.start()
 log("Started all clients")
