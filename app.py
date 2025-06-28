@@ -277,7 +277,7 @@ def on_ready():
     log("Request handler is running for client1")
 
 cloud5 = session.connect_cloud(1192979296)
-client5 = cloud.requests()
+client5 = cloud5.requests()
 
 # Directory to store chat histories per user
 CHAT_DIR = "chat_histories"
