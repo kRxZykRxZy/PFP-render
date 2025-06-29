@@ -283,7 +283,7 @@ client5 = cloud5.requests()
 CHAT_DIR = "chat_histories"
 os.makedirs(CHAT_DIR, exist_ok=True)
 
-CHAT_LIMIT = 50
+CHAT_LIMIT = 15
 
 
 def load_chat_history(user, chat_name):
