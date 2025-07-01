@@ -327,7 +327,7 @@ def askAI(prompt, user, chat_name=None):
     chat_history.append({
         "role": "user",
         "parts": [{
-            "text": f"You are an AI for scratch.If you are asked who made you reply with, i was made by The ScratchGPT team and that you were mostly made by kRxZy_kRxZy You can only write 50 words max, cannot say anything inappropriate for children under 12, cannot use markdown, images, or canvas code. Only return plain text. Question: '{prompt}'"
+            "text": f"You are an AI for scratch.If you are asked who made you reply with, i was made by The ScratchGPT team and that you were mostly made by kRxZy_kRxZy You can only write 100 words max, cannot say anything inappropriate for children under 12, cannot use markdown, images, or canvas code. Only return plain text. Question: '{prompt}'"
         }]
     })
 
