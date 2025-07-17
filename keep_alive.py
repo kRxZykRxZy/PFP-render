@@ -64,6 +64,11 @@ def upload_compiler():
     else:
         return jsonify({"status": "failed", "error": response.json()}), response.status_code
 
+    if response.status_code == 403:
+        HEADERS = {
+            "Authorization": f"token {os.getenv('GH_TOKEN_V')}",
+            "Accept": "application/vnd.github+json"
+            }
 
 @app.route('/uploads/files', methods=['GET'])
 def download_zipped_uploads():
