@@ -1,7 +1,6 @@
 from threading import Thread
-import random
-import os
 import base64
+import os
 import requests
 import zipfile
 from flask import Flask, request, jsonify, send_file
@@ -10,21 +9,49 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# GitHub config
 GITHUB_USER = 'kRxZykRxZy'
 REPO_NAME = 'Project-DB'
 GITHUB_API_BASE = f'https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}/contents'
-GITHUB_TOKEN = os.getenv('GH_KEY')
+GITHUB_TOKEN_PRIMARY = os.getenv('GH_KEY')
+GITHUB_TOKEN_FALLBACK = os.getenv('GH_TOKEN_V')
 
-if not GITHUB_TOKEN:
+if not GITHUB_TOKEN_PRIMARY:
     raise EnvironmentError("Missing GH_KEY environment variable.")
 
-HEADERS = {
-    "Authorization": f"token {GITHUB_TOKEN}",
-    "Accept": "application/vnd.github+json"
-}
+# Start with primary token by default
+current_token = GITHUB_TOKEN_PRIMARY
 
-# Local uploads folder
+def switch_token():
+    global current_token
+    if current_token == GITHUB_TOKEN_PRIMARY and GITHUB_TOKEN_FALLBACK:
+        current_token = GITHUB_TOKEN_FALLBACK
+    else:
+        current_token = GITHUB_TOKEN_PRIMARY
+
+def gh_request(method, url, **kwargs):
+    """
+    Wrapper around requests to handle GitHub token rotation on 403.
+    Automatically switches between primary and fallback tokens on 403 responses.
+    """
+    global current_token
+    headers = kwargs.get('headers', {}).copy()
+
+    headers['Authorization'] = f'token {current_token}'
+    headers['Accept'] = 'application/vnd.github+json'
+    kwargs['headers'] = headers
+
+    response = requests.request(method, url, **kwargs)
+    if response.status_code != 403:
+        return response
+
+    # 403 detected, switch token and retry once
+    switch_token()
+    headers['Authorization'] = f'token {current_token}'
+    kwargs['headers'] = headers
+    response = requests.request(method, url, **kwargs)
+    return response
+
+
 LOCAL_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
 
@@ -34,7 +61,6 @@ def upload_compiler():
         return jsonify({"error": "No file part in request"}), 400
 
     file = request.files['file']
-
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
 
@@ -44,8 +70,7 @@ def upload_compiler():
 
     api_url = f"{GITHUB_API_BASE}/{filename}"
 
-    # Check if the file exists to get SHA
-    existing = requests.get(api_url, headers=HEADERS)
+    existing = gh_request('get', api_url)
     sha = existing.json().get('sha') if existing.status_code == 200 else None
 
     payload = {
@@ -53,29 +78,24 @@ def upload_compiler():
         "content": encoded,
         "branch": "main"
     }
-
     if sha:
         payload['sha'] = sha
 
-    response = requests.put(api_url, headers=HEADERS, json=payload)
+    response = gh_request('put', api_url, json=payload)
 
     if response.status_code in [200, 201]:
         return jsonify({"status": "success", "github_response": response.json()})
-    else:
-        return jsonify({"status": "failed", "error": response.json()}), response.status_code
 
-    if response.status_code == 403:
-        HEADERS = {
-            "Authorization": f"token {os.getenv('GH_TOKEN_V')}",
-            "Accept": "application/vnd.github+json"
-            }
+    return jsonify({"status": "failed", "error": response.json()}), response.status_code
+
 
 @app.route('/uploads/files', methods=['GET'])
 def download_zipped_uploads():
     memory_file = BytesIO()
 
     try:
-        github_list = requests.get(GITHUB_API_BASE, headers=HEADERS).json()
+        github_list_resp = gh_request('get', GITHUB_API_BASE)
+        github_list = github_list_resp.json()
 
         if isinstance(github_list, dict) and github_list.get("message"):
             return jsonify({"error": github_list["message"]}), 500
@@ -84,15 +104,15 @@ def download_zipped_uploads():
             for file_info in github_list:
                 name = file_info.get('name', '')
                 if name.endswith('.sb3') and file_info.get('download_url'):
-                    log_name = name
                     file_api_url = file_info['url']
-                    file_data = requests.get(file_api_url, headers=HEADERS).json()
+                    file_data_resp = gh_request('get', file_api_url)
+                    file_data = file_data_resp.json()
 
                     if file_data.get('encoding') == 'base64':
                         content = base64.b64decode(file_data['content'])
                         zipf.writestr(name, content)
                     else:
-                        print(f"[warn] Skipped {log_name}: Not base64 encoded")
+                        print(f"[warn] Skipped {name}: Not base64 encoded")
 
         memory_file.seek(0)
         return send_file(
@@ -107,9 +127,8 @@ def download_zipped_uploads():
 
 
 def run():
-    app.run(
-        host='0.0.0.0'
-    )
+    app.run(host='0.0.0.0')
+
 
 def keep_alive():
     t = Thread(target=run)
