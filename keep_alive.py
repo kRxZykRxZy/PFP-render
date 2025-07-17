@@ -18,7 +18,6 @@ GITHUB_TOKEN_FALLBACK = os.getenv('GH_TOKEN_V')
 if not GITHUB_TOKEN_PRIMARY:
     raise EnvironmentError("Missing GH_KEY environment variable.")
 
-# Start with primary token by default
 current_token = GITHUB_TOKEN_PRIMARY
 
 def switch_token():
@@ -29,10 +28,6 @@ def switch_token():
         current_token = GITHUB_TOKEN_PRIMARY
 
 def gh_request(method, url, **kwargs):
-    """
-    Wrapper around requests to handle GitHub token rotation on 403.
-    Automatically switches between primary and fallback tokens on 403 responses.
-    """
     global current_token
     headers = kwargs.get('headers', {}).copy()
 
@@ -44,13 +39,12 @@ def gh_request(method, url, **kwargs):
     if response.status_code != 403:
         return response
 
-    # 403 detected, switch token and retry once
+    # Switch token and retry once on 403
     switch_token()
     headers['Authorization'] = f'token {current_token}'
     kwargs['headers'] = headers
     response = requests.request(method, url, **kwargs)
     return response
-
 
 LOCAL_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
@@ -103,7 +97,8 @@ def download_zipped_uploads():
         with zipfile.ZipFile(memory_file, 'w') as zipf:
             for file_info in github_list:
                 name = file_info.get('name', '')
-                if name.endswith('.sb3') and file_info.get('download_url'):
+                # No extension filter here; include all files with a download URL
+                if name and file_info.get('download_url'):
                     file_api_url = file_info['url']
                     file_data_resp = gh_request('get', file_api_url)
                     file_data = file_data_resp.json()
