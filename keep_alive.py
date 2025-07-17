@@ -73,24 +73,24 @@ def upload_file_to_github(file_storage, tag="general"):
 
 @app.route('/upload/compiler', methods=['POST'])
 def upload_files():
-    if 'files' not in request.files:
+    if 'file' not in request.file:
         return jsonify({"error": "No files in request"}), 400
 
-    files = request.files.getlist('files')
+    file = request.files.getlist('file')
     if not files:
         return jsonify({"error": "No files uploaded"}), 400
 
     results = []
-    for file in files:
-        if not file or file.filename == '':
+    for item in file:
+        if not item or item.filename == '':
             results.append({"filename": None, "status": "skipped - no filename"})
             continue
 
-        ext = os.path.splitext(file.filename)[1].lower()
+        ext = os.path.splitext(item.filename)[1].lower()
         tag = "sb3" if ext == '.sb3' else "asset"
 
-        success = upload_file_to_github(file, tag=tag)
-        results.append({"filename": file.filename, "status": "uploaded" if success else "failed", "type": tag})
+        success = upload_file_to_github(item, tag=tag)
+        results.append({"filename": item.filename, "status": "uploaded" if success else "failed", "type": tag})
 
     return jsonify({"results": results})
 
