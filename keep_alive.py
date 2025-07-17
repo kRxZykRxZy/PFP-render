@@ -24,7 +24,7 @@ HEADERS = {
     "Accept": "application/vnd.github+json"
 }
 
-# Local uploads folder (for fallback or zip route)
+# Local uploads folder
 LOCAL_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
 
@@ -44,7 +44,7 @@ def upload_compiler():
 
     api_url = f"{GITHUB_API_BASE}/{filename}"
 
-    # Check if the file already exists (so we can get the SHA)
+    # Check if the file exists to get SHA
     existing = requests.get(api_url, headers=HEADERS)
     sha = existing.json().get('sha') if existing.status_code == 200 else None
 
@@ -64,33 +64,48 @@ def upload_compiler():
     else:
         return jsonify({"status": "failed", "error": response.json()}), response.status_code
 
+
 @app.route('/uploads/files', methods=['GET'])
 def download_zipped_uploads():
     memory_file = BytesIO()
 
-    with zipfile.ZipFile(memory_file, 'w') as zipf:
-        for root, _, files in os.walk(LOCAL_UPLOAD_DIR):
-            for file in files:
-                full_path = os.path.join(root, file)
-                arcname = os.path.relpath(full_path, LOCAL_UPLOAD_DIR)
-                zipf.write(full_path, arcname)
+    try:
+        github_list = requests.get(GITHUB_API_BASE, headers=HEADERS).json()
 
-    memory_file.seek(0)
-    return send_file(
-        memory_file,
-        download_name='uploads.zip',
-        as_attachment=True,
-        mimetype='application/zip'
-    )
+        if isinstance(github_list, dict) and github_list.get("message"):
+            return jsonify({"error": github_list["message"]}), 500
+
+        with zipfile.ZipFile(memory_file, 'w') as zipf:
+            for file_info in github_list:
+                name = file_info.get('name', '')
+                if name.endswith('.sb3') and file_info.get('download_url'):
+                    log_name = name
+                    file_api_url = file_info['url']
+                    file_data = requests.get(file_api_url, headers=HEADERS).json()
+
+                    if file_data.get('encoding') == 'base64':
+                        content = base64.b64decode(file_data['content'])
+                        zipf.writestr(name, content)
+                    else:
+                        print(f"[warn] Skipped {log_name}: Not base64 encoded")
+
+        memory_file.seek(0)
+        return send_file(
+            memory_file,
+            download_name='uploads.zip',
+            as_attachment=True,
+            mimetype='application/zip'
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 def run():
-  app.run(
-    host='0.0.0.0'
-  )
+    app.run(
+        host='0.0.0.0'
+    )
 
 def keep_alive():
-  '''
-  Creates and starts new thread that runs the function run.
-  '''
-  t = Thread(target=run)
-  t.start()
+    t = Thread(target=run)
+    t.start()
