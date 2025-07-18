@@ -138,6 +138,49 @@ def download_zipped_uploads():
         log_upload(f"Error creating zip: {str(e)}", level="error")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/contents', methods=['GET'])
+def list_sb3_files_in_zip():
+    try:
+        # Fetch all files from the GitHub repo
+        github_list_resp = gh_request('get', GITHUB_API_BASE)
+        github_list = github_list_resp.json()
+
+        if isinstance(github_list, dict) and github_list.get("message"):
+            return jsonify({"error": github_list["message"]}), 500
+
+        sb3_filenames = []
+
+        for file_info in github_list:
+            name = file_info.get('name', '')
+            if not name.lower().endswith('.zip'):
+                continue  # only examine ZIP files
+
+            file_api_url = file_info['url']
+            file_data_resp = gh_request('get', file_api_url)
+            file_data = file_data_resp.json()
+
+            encoding = file_data.get('encoding')
+            content = file_data.get('content')
+
+            if encoding != 'base64' or not content:
+                continue
+
+            decoded = base64.b64decode(content)
+
+            with zipfile.ZipFile(BytesIO(decoded), 'r') as zipf:
+                for zip_info in zipf.infolist():
+                    if zip_info.filename.lower().endswith('.sb3'):
+                        sb3_filenames.append(zip_info.filename)
+
+        if not sb3_filenames:
+            return jsonify({"message": "No .sb3 files found in recent ZIPs."}), 404
+
+        return jsonify({"sb3_files": sb3_filenames})
+
+    except Exception as e:
+        log_upload(f"Error listing .sb3 files: {str(e)}", level="error")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/status', methods=['GET'])
 def status():
     return jsonify({"logs": upload_logs})
