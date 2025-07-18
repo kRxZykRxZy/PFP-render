@@ -6,7 +6,7 @@ import os, base64, requests, zipfile
 
 app = Flask(__name__)
 
-GITHUB_USER = 'kRxZykRxZy'
+GITHUB_USER = 'MyScratchBlocks'
 REPO_NAME = 'Project-DB'
 GITHUB_API_BASE = f'https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}/contents'
 GITHUB_TOKEN_PRIMARY = os.getenv('GH_KEY')
